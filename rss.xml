@@ -1,0 +1,183 @@
+<?php
+require_once('simple_html_dom.php');
+header('Content-Type: text/xml; charset=UTF-8');
+$arg = $_GET['site'];
+$arg = $argv[1]; #デバッグ用
+
+//xml用エスケープの変換
+function escape($str){
+  $search = array('<','>','&');
+  $replace = array('&lt;','&gt;','&amp;');
+  return str_replace($search,$replace,$str);
+}
+
+//html文字参照のUTF-8化
+function convert($str){
+  return mb_convert_encoding($str, 'UTF-8', 'HTML-ENTITIES');
+}
+
+//nana party用文字削除関数
+function nana_replace($str){
+  $search = array('CD/BD&DVD','&nbsp;','MORE INFO &gt;&gt;','MORE INFO >>');
+  $replace = array('CD/BD&amp;DVD','','','');
+  return str_replace($search,$replace,$str);
+}
+
+//sphere portal square、TrySail portal square用共用関数
+function common_mrayn($url,$base){
+  $content = file_get_contents($url);
+  $html = str_get_html($content);
+
+  $title = $html->find('title',0)->plaintext;
+  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$base.'</link><title>'.$title.'</title><description>'.$title.'</description>\n';
+
+  foreach ($html->find('div[id=content-wrapper]') as $wrapper) {
+    for ($i=0; $i < count($wrapper->find('h3')) ; $i++) {
+      $item_title = $wrapper->find('h3')[$i]->plaintext;
+      $item_url = $base.$wrapper->find('a',$i)->href;
+      echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$item_title."</description></item>\n";
+    }
+  };
+  echo "</channel></rss>";
+}
+
+//ameblo共通関数
+function common_ameba($url){
+  $rss = file_get_contents($url);
+  $xml = simplexml_load_string($rss);
+
+  $title = $xml->channel->title;
+  $link = $xml->channel->link;
+  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$link.'</link><title>'.$title.'</title><description>'.$title."</description>\n";
+
+  foreach ($xml->channel->item as $feed) {
+    if (!preg_match('/^PR: /',$feed->title)) {
+      $item_title = $feed->title;
+      $item_url = $feed->link;
+      $search = array('/<("[^"]*"|\'[^\']*\'|[^\'">])*>/','/続きをみる/','/『著作権保護のため、記事の一部のみ表示されております。』/','/^\n /','/$\n/','/$\n/');
+      $replace = array('','','','','','');
+      $replaced = preg_replace($search,$replace,$feed->description);
+      $replaced = html_entity_decode($replaced,ENT_QUOTES,'UTF-8');
+      echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$replaced."</description></item>\n";
+    }
+  }
+  echo "</channel></rss>";
+}
+
+//nana party
+if ($arg == "nana") {
+  $url = "http://www.mizukinana.jp/";
+  $content = file_get_contents($url);
+  $html = str_get_html($content);
+
+  $title = $html->find('title',0)->plaintext;
+  $description = $html->find('h1',0)->plaintext;
+  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$url.'</link><title>'.$title.'</title><description>'.$description."</description>\n";
+
+  foreach ($html->find('div[id=topics]') as $wrapper) {
+    for ($i=0; $i < count($wrapper->find('h2')); $i++) {
+      $item_title_pre = $wrapper->find('h2',$i)->plaintext;
+      if (mb_detect_encoding($item_title_pre) == 'ASCII') {
+        $item_title_pre = convert($item_title_pre);
+      }
+      $item_title = nana_replace($item_title_pre);
+      $item_url_pre = $wrapper->find('a',$i)->href;
+      if(strpos($item_url_pre,'news') !== false){
+        $item_url = $url.$item_url_pre;
+      }else {
+        $item_url = $item_url_pre;
+      }
+      echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$item_title."</description></item>\n";
+    }
+  };
+  echo "</channel></rss>";
+}
+
+//sphere portal square
+if ($arg == "sphere") {
+  common_mrayn("https://sphere.m-rayn.jp/pages/update","https://sphere.m-rayn.jp");
+}
+
+//TrySail portal square
+if ($arg == "trysail") {
+  common_mrayn("https://trysail.jp/pages/update","https://trysail.jp");
+}
+
+//ameblo
+switch (true) {
+  case $arg == "minako":
+    common_ameba("http://feedblog.ameba.jp/rss/ameblo/kotobukiminako-blog/rss20.xml");
+    break;
+  case $arg == "ayahi":
+    common_ameba("http://feedblog.ameba.jp/rss/ameblo/takagakiayahi-blog/rss20.xml");
+    break;
+  case $arg == "haruka":
+    common_ameba("http://feedblog.ameba.jp/rss/ameblo/tomatsuharuka-blog/rss20.xml");
+    break;
+  case $arg == "aki":
+    common_ameba("http://feedblog.ameba.jp/rss/ameblo/toyosakiaki-blog/rss20.xml");
+    break;
+  case $arg == "mocho":
+    common_ameba("http://feedblog.ameba.jp/rss/ameblo/asakuramomoblog/rss20.xml");
+    break;
+  case $arg == "sora":
+    common_ameba("http://feedblog.ameba.jp/rss/ameblo/amamiyasorablog/rss20.xml");
+    break;
+  case $arg == "nansu":
+    common_ameba("http://feedblog.ameba.jp/rss/ameblo/natsukawashiinablog/rss20.xml");
+    break;
+  default:
+    break;
+}
+
+//Webラジオ Pl@net Sphere
+if ($arg == "planet") {
+  $url = "http://lantis-net.com/sphere/";
+  $agent = stream_context_create(array('http'=>array('user_agent'=>'Mozilla/5.0 (Linux; Android 6.0; 402SO Build/32.1.D.0.284; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/51.0.2704.81 Mobile Safari/537.36')));
+  $content = file_get_contents($url,"UTF-8",$agent);
+  $html = str_get_html($content);
+
+  $title = $html->find('title',0)->plaintext;
+  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$url."</link>
+  <title>".$title."</title><description>寿 美菜子、高垣彩陽、戸松 遥、豊崎愛生の４人によるガールズユニット、スフィア。\nそれぞれ異なる個性をスフィアとしてお届けするラジオです。
+  元気で愉しいだけじゃない、真剣に向き合う向き合うマジメさもスフィア。そんな４人の様々な姿を感じて下さい。
+  リスナーの皆さんからのメールもお待ちしております!</description>\n";
+  if (is_array($html->find('div[id=info]'))) {
+    $item_title = "info";
+    foreach ($html->find('div[id=info]') as $info) {
+      $item_description = preg_replace('/$\n/','',$info->plaintext);
+    }
+    echo "<item><title>".$item_title."</title><link>".$url."</link><description>".$item_description."</description></item>\n";
+  }
+
+  foreach ($html->find('div[id=onair]') as $wrapper) {
+    $item_title = $wrapper->find('p[class=titleno]',0)->plaintext;
+    $item_url = $wrapper->find('a',0)->href;
+    $item_description = $wrapper->find('text',2).$wrapper->find('text',3);
+    echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$item_description."</description></item>\n";
+  }
+  echo "</channel></rss>";}
+
+//Circus [サーカス]
+if ($arg == "circus") {
+  $url = "http://circus-co.jp/";
+  $content = file_get_contents($url);
+  $html = str_get_html($content);
+
+  $title = $html->find('title',0)->plaintext;
+  $description = $html->find("meta[name=Description]",0)->content;
+  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$url.'</link><title>'.$title.'</title><description>'.$description."</description>\n";
+
+  foreach ($html->find('div[class=article]') as $wrapper) {
+    for ($i=0; $i < count($wrapper); $i++) {
+      $item_title_pre = $wrapper->find('h3',$i)->plaintext;
+      $item_title = escape($item_title_pre);
+      $item_url = $wrapper->find('a',0)->href;
+      $item_description_pre = $wrapper->find('p',0)->plaintext;
+      $item_description = escape($item_description_pre);
+      echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$item_description."</description></item>\n";
+    }
+  };
+  echo "</channel></rss>";
+}
+?>
