@@ -2,7 +2,7 @@
 require_once('simple_html_dom.php');
 header("Content-Type: text/xml");
 $arg = $_GET['site'];
-$arg = $argv[1]; #デバッグ用
+//$arg = $argv[1]; #デバッグ用
 
 //xml用エスケープの変換
 function escape($str){
@@ -52,11 +52,13 @@ function common_ameba($url){
 
   foreach ($xml->channel->item as $feed) {
     if (!preg_match('/^PR: /',$feed->title)) {
-      $item_title = $feed->title;
+      $item_title = htmlspecialchars($feed->title);
       $item_url = $feed->link;
       $search = array('/<("[^"]*"|\'[^\']*\'|[^\'">])*>/','/続きをみる/','/『著作権保護のため、記事の一部のみ表示されております。』/','/^\n /','/$\n/','/$\n/');
       $replace = array('','','','','','');
       $replaced = preg_replace($search,$replace,$feed->description);
+      $replaced = htmlspecialchars($replaced);
+      $replaced = rtrim($replaced);
       echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$replaced."</description></item>\n";
     }
   }

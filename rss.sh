@@ -32,23 +32,21 @@ list=("nana" "sphere" "trysail" "planet" "circus") #公式サイト
 list+=("minako" "ayahi" "haruka" "aki") #スフィア
 list+=("mocho" "sora" "nansu") #TrySail
 for site in ${list[@]} ; do
-  echo $site
   file=$(dirname $0)/rss/${site}.xml
   if [ ! -e $file ]; then
     if [ ! -d $dir ]; then
       mkdir $dir
     fi
     touch $file
-    curl -Ss -X GET "https://emradc.wjg.jp/dhcp/rss.xml?site=${site}" > $file
+    curl -Ss -X GET "https://emradc.wjg.jp/var/rss.xml?site=${site}" > $file
     text="${site}.xmlが見つからないため、作成しました。"
-    data="payload={\"username\": \"RSS Notification\",\"text\": \"$text\"}"
+    data="payload={\"username\": \"RSS Notification\",\"icon_emoji\": \":rss:\",\"text\": \"$text\"}"
     curl -Ss -X POST --data-urlencode "$data" $webhook > /dev/null
   fi
   curl -Ss -X GET "https://emradc.wjg.jp/var/rss.xml?site=${site}" > $pre
   title=$(echo "cat /rss/channel/title"|xmllint --shell $pre|grep '<title>'|sed -e "s/<title>\(.*\)<\/title>/\1/")
   diff $file $pre|sed -e "s/^> //"|grep '<item>' > $temp
   if [ ${PIPESTATUS[0]} -eq 1 ]; then
-    count=`wc -l $temp|awk '{print $1}'`
     text=(" ${title} の更新です!\n\n")
     IFS_ORG=$IFS
     IFS=$'\n'
