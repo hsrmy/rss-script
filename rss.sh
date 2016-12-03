@@ -33,6 +33,7 @@ list+=("minako" "ayahi" "haruka" "aki") #スフィア
 list+=("mocho" "sora" "nansu") #TrySail
 for site in ${list[@]} ; do
   file=$(dirname $0)/rss/${site}.xml
+  dir=$(dirname $file)
   if [ ! -e $file ]; then
     if [ ! -d $dir ]; then
       mkdir $dir
