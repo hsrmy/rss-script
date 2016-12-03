@@ -1,6 +1,6 @@
 <?php
 require_once('simple_html_dom.php');
-header('Content-Type: text/xml; charset=UTF-8');
+header("Content-Type: text/xml");
 $arg = $_GET['site'];
 $arg = $argv[1]; #デバッグ用
 
@@ -29,7 +29,7 @@ function common_mrayn($url,$base){
   $html = str_get_html($content);
 
   $title = $html->find('title',0)->plaintext;
-  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$base.'</link><title>'.$title.'</title><description>'.$title.'</description>\n';
+  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$base.'</link><title>'.$title.'</title><description>'.$title."</description>\n";
 
   foreach ($html->find('div[id=content-wrapper]') as $wrapper) {
     for ($i=0; $i < count($wrapper->find('h3')) ; $i++) {
@@ -57,7 +57,7 @@ function common_ameba($url){
       $search = array('/<("[^"]*"|\'[^\']*\'|[^\'">])*>/','/続きをみる/','/『著作権保護のため、記事の一部のみ表示されております。』/','/^\n /','/$\n/','/$\n/');
       $replace = array('','','','','','');
       $replaced = preg_replace($search,$replace,$feed->description);
-      $replaced = html_entity_decode($replaced,ENT_QUOTES,'UTF-8');
+      //$replaced = html_entity_decode($replaced,ENT_QUOTES,'UTF-8');
       echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$replaced."</description></item>\n";
     }
   }
@@ -147,7 +147,9 @@ if ($arg == "planet") {
     foreach ($html->find('div[id=info]') as $info) {
       $item_description = preg_replace('/$\n/','',$info->plaintext);
     }
-    echo "<item><title>".$item_title."</title><link>".$url."</link><description>".$item_description."</description></item>\n";
+    if ($item_description != null) {
+      echo "<item><title>".$item_title."</title><link>".$url."</link><description>".$item_description."</description></item>\n";
+    }
   }
 
   foreach ($html->find('div[id=onair]') as $wrapper) {
