@@ -31,6 +31,7 @@ favicon(){
 list=("nana" "sphere" "trysail" "planet" "circus") #公式サイト
 list+=("minako" "ayahi" "haruka" "aki") #スフィア
 list+=("mocho" "sora" "nansu") #TrySail
+count=$(echo "${#list[*]}")
 for site in ${list[@]} ; do
   file=$(dirname $0)/rss/${site}.xml
   dir=$(dirname $file)
@@ -40,9 +41,11 @@ for site in ${list[@]} ; do
     fi
     touch $file
     curl -Ss -X GET "https://emradc.wjg.jp/var/rss.xml?site=${site}" > $file
-    text="${site}.xmlが見つからないため、作成しました。"
-    data="payload={\"username\": \"RSS Notification\",\"icon_emoji\": \":rss:\",\"text\": \"$text\"}"
-    curl -Ss -X POST --data-urlencode "$data" $webhook > /dev/null
+    make+=("${site}.xmlが見つからないため、作成しました。\n")
+    if [ ${count} == `echo "${#make[*]}"` ]; then
+      data="payload={\"username\": \"RSS Notification\",\"icon_emoji\": \":rss:\",\"text\": \"${make[@]}\"}"
+      curl -Ss -X POST --data-urlencode "$data" $webhook > /dev/null
+    fi
   fi
   curl -Ss -X GET "https://emradc.wjg.jp/var/rss.xml?site=${site}" > $pre
   title=$(echo "cat /rss/channel/title"|xmllint --shell $pre|grep '<title>'|sed -e "s/<title>\(.*\)<\/title>/\1/")
@@ -67,7 +70,7 @@ for site in ${list[@]} ; do
     done
     favicon ${site}
     data="payload={\"channel\": \"$channel\",\"username\": \"$title\",\"icon_url\": \"$favicon\",\"text\": \"${text[@]}\"}"
-    curl -Ss -X POST --data-urlencode "$data" $webhook > /dev/null
+    #curl -Ss -X POST --data-urlencode "$data" $webhook > /dev/null
     IFS=$IFS_ORG
     cp $pre $file
   fi
