@@ -2,7 +2,7 @@
 require_once('simple_html_dom.php');
 header("Content-Type: text/xml");
 $arg = $_GET['site'];
-//$arg = $argv[1]; #デバッグ用
+$arg = $argv[1]; #デバッグ用
 
 //xml用エスケープの変換
 function escape($str){
@@ -91,6 +91,24 @@ if ($arg == "nana") {
       echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$item_title."</description></item>\n";
     }
   };
+  echo "</channel></rss>";
+}
+
+if ($arg == "nanab") {
+  $url = "http://www.mizukinana.jp/blog/atom.xml";
+  $rss = file_get_contents($url);
+  $xml = simplexml_load_string($rss);
+
+  $title = $xml->title;
+  $link = $xml->link['href'];
+  echo '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0"><channel><link>'.$link.'</link><title>'.$title.'</title><description>'.$title."</description>\n";
+
+  foreach ($xml->entry as $wrapper) {
+    $item_title = $wrapper->title;
+    $item_url = $wrapper->link['href'];
+    $item_description = $wrapper->summary;
+    echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$item_description."</description></item>\n";
+  }
   echo "</channel></rss>";
 }
 
