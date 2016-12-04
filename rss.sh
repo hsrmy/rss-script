@@ -4,7 +4,7 @@ webhook="https://hooks.slack.com/services/T22J31NSK/B24H67T18/8u5Fn5HHZR08zd6QSU
 
 favicon(){
   case $1 in
-    nana )
+    nana|nanab )
       favicon="http://mizukinana.jp/favicon.ico"
       channel="#mizukinana";;
     sphere )
@@ -28,7 +28,7 @@ favicon(){
   esac
 }
 
-list=("nana" "sphere" "trysail" "planet" "circus") #公式サイト
+list=("nana" "sphere" "trysail" "planet" "circus" "nanab") #公式サイト,ブログ
 list+=("minako" "ayahi" "haruka" "aki") #スフィア
 list+=("mocho" "sora" "nansu") #TrySail
 count=$(echo "${#list[*]}")
@@ -70,7 +70,7 @@ for site in ${list[@]} ; do
     done
     favicon ${site}
     data="payload={\"channel\": \"$channel\",\"username\": \"$title\",\"icon_url\": \"$favicon\",\"text\": \"${text[@]}\"}"
-    #curl -Ss -X POST --data-urlencode "$data" $webhook > /dev/null
+    curl -Ss -X POST --data-urlencode "$data" $webhook > /dev/null
     IFS=$IFS_ORG
     cp $pre $file
   fi

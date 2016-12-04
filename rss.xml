@@ -2,7 +2,7 @@
 require_once('simple_html_dom.php');
 header("Content-Type: text/xml");
 $arg = $_GET['site'];
-$arg = $argv[1]; #デバッグ用
+//$arg = $argv[1]; #デバッグ用
 
 //xml用エスケープの変換
 function escape($str){
@@ -106,7 +106,7 @@ if ($arg == "nanab") {
   foreach ($xml->entry as $wrapper) {
     $item_title = $wrapper->title;
     $item_url = $wrapper->link['href'];
-    $item_description = $wrapper->summary;
+    $item_description = htmlspecialchars($wrapper->summary);
     echo "<item><title>".$item_title."</title><link>".$item_url."</link><description>".$item_description."</description></item>\n";
   }
   echo "</channel></rss>";
