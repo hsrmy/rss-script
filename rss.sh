@@ -49,8 +49,8 @@ for site in ${list[@]} ; do
   fi
   curl -Ss -X GET "https://emradc.wjg.jp/var/rss.xml?site=${site}" > $pre
   title=$(echo "cat /rss/channel/title"|xmllint --shell $pre|grep '<title>'|sed -e "s/<title>\(.*\)<\/title>/\1/")
-  diff --old-line-format='' --new-line-format='%L' --unchanged-line-format='' > $temp
-  if [ $? -eq 1 ]; then
+  diff --new-line-format="%L" --unchanged-line-format="" --old-line-format="" ${file} ${pre}|grep '<item>' > $temp
+if [ ${PIPESTATUS[0]} -eq 1 ]; then
     text=(" ${title} の更新です!\n\n")
     IFS_ORG=$IFS
     IFS=$'\n'
